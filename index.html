@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SCARLETT — кабинет</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{ --red:#DA291C; --ink:#1c1c1c; --muted:#8a8a8a; --line:#ececec;
+         --bg:#f6f6f6; --card:#fff; --green:#0f6e56; --green-bg:#e1f5ee;
+         --amber:#854f0b; --amber-bg:#faeeda; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;
+       background:var(--bg);color:var(--ink);font-size:15px}
+  .head{background:var(--red);color:#fff;padding:16px 18px;display:flex;
+        align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.16);
+        display:flex;align-items:center;justify-content:center;font-size:18px}
+  .brand b{font-size:15px;letter-spacing:.5px;font-weight:600}
+  .brand small{display:block;font-size:12px;opacity:.85}
+  .who{display:flex;align-items:center;gap:8px;font-size:13px}
+  .ava{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.2);
+       display:flex;align-items:center;justify-content:center;font-size:12px}
+  .wrap{padding:16px}
+  .card{background:var(--card);border:.5px solid var(--line);border-radius:12px;
+        padding:14px 16px;margin-bottom:14px}
+  .row{display:flex;justify-content:space-between;align-items:flex-start}
+  .lbl{font-size:13px;color:var(--muted)}
+  .bal{font-size:28px;font-weight:600;line-height:1.1}
+  .bal.debt{color:var(--red)} .bal.pos{color:var(--green)}
+  .sub{font-size:13px;color:var(--muted);margin-top:2px}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;
+        border-radius:8px;font-size:13px;font-weight:600}
+  .pill.due{background:var(--amber-bg);color:var(--amber)}
+  .note{display:flex;gap:6px;margin-top:12px;padding-top:12px;
+        border-top:.5px solid var(--line);font-size:12px;color:var(--muted)}
+  h3{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;
+     margin:18px 2px 10px}
+  .tag{font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;
+       background:#e6f1fb;color:#185fa5}
+  .track{height:8px;background:#efefef;border-radius:20px;overflow:hidden;margin-top:4px}
+  .fill{height:100%;border-radius:20px}
+  .flex{display:flex;justify-content:space-between;align-items:center}
+  .small{font-size:12px;color:var(--muted)}
+  .perks{display:flex;gap:8px;margin-top:12px}
+  .perk{flex:1;border-radius:8px;padding:8px 10px;font-size:12px}
+  .perk.on{background:var(--green-bg);color:var(--green)}
+  .perk.off{background:#f3f3f3;color:var(--muted)}
+  .op{display:flex;justify-content:space-between;padding:12px 14px;
+      border-bottom:.5px solid var(--line)}
+  .op:last-child{border-bottom:none}
+  .op .d{font-size:13px} .op .n{font-size:14px;font-weight:600}
+  .up{color:var(--green)} .down{color:var(--red)}
+  .center{padding:48px 24px;text-align:center;color:var(--muted)}
+  .idbox{margin-top:14px;background:#fff;border:.5px solid var(--line);
+         border-radius:10px;padding:12px;font-size:16px;font-weight:600;color:var(--ink)}
+  button{margin-top:14px;background:var(--red);color:#fff;border:none;
+         border-radius:10px;padding:11px 18px;font-size:14px;font-weight:600}
+  .skel{color:transparent;background:#eee;border-radius:6px;animation:p 1.2s infinite}
+  @keyframes p{50%{opacity:.5}}
+</style>
+</head>
+<body>
+<div id="app"><div class="center">Загрузка кабинета…</div></div>
+
+<script>
+// ============ ЗАПОЛНИТЬ ============
+var API_URL = 'https://script.google.com/macros/s/AKfycbxFSN62xiiYh9RJ8-ZJryrWUe9DiuZUVuyPvpOTFjH8sEvJQaz60ipC4bH1yHo3rnbPxQ/exec';
+// ===================================
+
+var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+
+var MONTHS = ['января','февраля','марта','апреля','мая','июня','июля',
+              'августа','сентября','октября','ноября','декабря'];
+function fmtDue(iso){
+  if(!iso) return '';
+  var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return iso;
+  return Number(m[3]) + ' ' + MONTHS[Number(m[2])-1];
+}
+function money(n){ return Math.round(Math.abs(n)).toLocaleString('ru-RU').replace(/,/g,' '); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function load(){
+  var initData = tg ? tg.initData : '';
+  if(!initData){ return render({ok:false, reason:'no_tg'}); }
+  fetch(API_URL + '?action=cabinet&initData=' + encodeURIComponent(initData))
+    .then(function(r){ return r.json(); })
+    .then(render)
+    .catch(function(){ render({ok:false, reason:'net'}); });
+}
+
+function render(d){
+  var app = document.getElementById('app');
+
+  if(!d.ok){
+    var uid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user)
+              ? tg.initDataUnsafe.user.id : '';
+    if(d.reason === 'unbound'){
+      app.innerHTML =
+        '<div class="head"><div class="brand"><div class="logo">🌹</div>'+
+        '<div><b>SCARLETT</b><small>Личный кабинет</small></div></div></div>'+
+        '<div class="center">Кабинет ещё не привязан.<br>'+
+        'Отправьте менеджеру ваш ID — он подключит доступ:'+
+        '<div class="idbox">ID: '+esc(uid)+'</div>'+
+        (uid?'<button onclick="copyId('+"'"+uid+"'"+')">Скопировать ID</button>':'')+
+        '</div>';
+    } else if(d.reason === 'no_tg'){
+      app.innerHTML = '<div class="center">Откройте кабинет через кнопку в Telegram-боте SCARLETT.</div>';
+    } else {
+      app.innerHTML = '<div class="center">Не удалось загрузить данные.<br>Попробуйте позже или напишите менеджеру.</div>';
+    }
+    return;
+  }
+
+  var debt = d.balanceUsd < 0;
+  var streakPct = d.streakTarget ? Math.min(100, Math.round(d.streak / d.streakTarget * 100)) : 0;
+  var volPct = d.seasonTarget ? Math.min(100, Math.round(d.seasonVolume / d.seasonTarget * 100)) : 0;
+  var volLeft = Math.max(0, d.seasonTarget - d.seasonVolume);
+
+  var h = '';
+  h += '<div class="head"><div class="brand"><div class="logo">🌹</div>'+
+       '<div><b>SCARLETT</b><small>Личный кабинет</small></div></div>'+
+       '<div class="who"><span>'+esc(d.name)+'</span>'+
+       '<div class="ava">'+esc(d.name.slice(0,2))+'</div></div></div>';
+
+  h += '<div class="wrap">';
+
+  // Баланс
+  h += '<div class="card"><div class="row"><div>'+
+       '<div class="lbl">Текущий баланс</div>'+
+       '<div class="bal '+(debt?'debt':'pos')+'">'+(debt?'−':'')+'$'+money(d.balanceUsd)+'</div>'+
+       '<div class="sub">≈ '+(d.balanceRub<0?'−':'')+money(d.balanceRub)+' ₽</div></div>';
+  if(d.nextDue){
+    h += '<div style="text-align:right"><div class="lbl" style="margin-bottom:4px">К оплате до</div>'+
+         '<div class="pill due">⏳ '+esc(fmtDue(d.nextDue))+'</div></div>';
+  }
+  h += '</div><div class="note">🔔 Напоминание придёт заранее, до срока оплаты.</div></div>';
+
+  // Платёжная дисциплина
+  h += '<h3>🏅 Платёжная дисциплина</h3><div class="card">'+
+       '<div class="flex" style="margin-bottom:12px">'+
+       '<div><span class="tag">Уровень '+esc(d.tier)+'</span>'+
+       (d.nextTier?' <span class="small">→ '+esc(d.nextTier)+'</span>':'')+'</div>'+
+       '<div class="small" style="color:var(--ink)">🔥 <b>'+d.streak+'</b> флайтов в срок</div></div>'+
+       '<div class="track"><div class="fill" style="width:'+streakPct+'%;background:var(--red)"></div></div>'+
+       '<div class="flex small" style="margin-top:6px">'+
+       '<span>'+(d.nextTier?('До '+esc(d.nextTier)+': ещё '+Math.max(0,d.streakTarget-d.streak)+' оплат в срок'):'Максимальный уровень')+'</span>'+
+       '<span>'+d.streak+' / '+d.streakTarget+'</span></div>'+
+       '<div class="perks">'+
+       '<div class="perk on">✓ Открыто сейчас<br>'+esc(d.currentPerk)+'</div>'+
+       (d.nextTier?'<div class="perk off">🔒 '+esc(d.nextTier)+' откроет<br>'+esc(d.nextPerk)+'</div>':'')+
+       '</div></div>';
+
+  // Оборот
+  if(d.seasonTarget){
+    h += '<h3>📊 Оборот сезона</h3><div class="card">'+
+         '<div class="flex" style="align-items:baseline;margin-bottom:10px">'+
+         '<span style="font-size:22px;font-weight:600">$'+money(d.seasonVolume)+'</span>'+
+         '<span class="small">цель $'+money(d.seasonTarget)+'</span></div>'+
+         '<div class="track"><div class="fill" style="width:'+volPct+'%;background:#1D9E75"></div></div>'+
+         '<div class="small" style="margin-top:8px">🎁 Ещё $'+money(volLeft)+' до объёмной скидки −'+d.volumeDiscount+'%</div>'+
+         '</div>';
+  }
+
+  // История
+  if(d.history && d.history.length){
+    h += '<h3>🧾 Последние операции</h3><div class="card" style="padding:0">';
+    d.history.forEach(function(op){
+      var chg = (op.change===null || op.change===undefined) ? '' :
+        '<span class="'+(op.change>=0?'up':'down')+'">'+(op.change>=0?'▲ +$':'▼ −$')+money(op.change)+'</span>';
+      h += '<div class="op"><div><div class="n">'+(op.balance<0?'−':'')+'$'+money(op.balance)+'</div>'+
+           '<div class="small">баланс на '+esc(fmtDue(op.date))+'</div></div>'+
+           '<div style="text-align:right;font-size:13px">'+chg+'</div></div>';
+    });
+    h += '</div>';
+  }
+
+  h += '</div>';
+  app.innerHTML = h;
+}
+
+function copyId(id){
+  if(navigator.clipboard) navigator.clipboard.writeText(String(id));
+  if(tg && tg.showAlert) tg.showAlert('ID скопирован: '+id);
+}
+
+load();
+</script>
+</body>
+</html>
