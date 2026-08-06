@@ -86,9 +86,21 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 function load(){
   var initData = tg ? tg.initData : '';
   if(!initData){ return render({ok:false, reason:'no_tg'}); }
+  var dbg = /[?&]debug=1/.test(location.search) || (tg && tg.initData && /(^|&)start_param=debug(&|$)/.test(tg.initData));
   fetch(API_URL + '?action=cabinet&initData=' + encodeURIComponent(initData))
-    .then(function(r){ return r.json(); })
-    .then(render)
+    .then(function(r){ return r.text(); })
+    .then(function(txt){
+      if(dbg){
+        document.getElementById('app').innerHTML =
+          '<div style="padding:20px;font-size:13px;word-break:break-all">'
+          + '<b>Ответ сервера:</b><br><br>' + esc(txt)
+          + '<br><br><b>initData был:</b><br>' + esc(initData) + '</div>';
+        return;
+      }
+      var d;
+      try { d = JSON.parse(txt); } catch(e){ d = {ok:false, reason:'net'}; }
+      render(d);
+    })
     .catch(function(){ render({ok:false, reason:'net'}); });
 }
 
