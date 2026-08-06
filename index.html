@@ -110,7 +110,9 @@ function render(d){
     } else if(d.reason === 'no_tg'){
       app.innerHTML = '<div class="center">Откройте кабинет через кнопку в Telegram-боте SCARLETT.</div>';
     } else {
-      app.innerHTML = '<div class="center">Не удалось загрузить данные.<br>Попробуйте позже или напишите менеджеру.</div>';
+      app.innerHTML = '<div class="center">Не удалось загрузить данные.<br>Попробуйте позже или напишите менеджеру.'
+        + '<div class="idbox">причина: ' + esc(d.reason || 'net')
+        + (d.marking ? '<br>маркировка: ' + esc(d.marking) : '') + '</div></div>';
     }
     return;
   }
