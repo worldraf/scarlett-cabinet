@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SCARLETT — кабинет</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{--red:#DA291C;--ink:#1c1c1c;--muted:#8a8a8a;--line:#ececec;--bg:#f4f5f6;--card:#fff;
+        --green:#0f6e56;--green-bg:#e1f5ee;--amber:#854f0b;--amber-bg:#faeeda;--red-bg:#fcebeb;--red-t:#a32d2d;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+  .head{background:var(--red);color:#fff;padding:15px 17px;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:9px}
+  .logo{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:18px}
+  .brand b{font-size:14px;letter-spacing:.5px;font-weight:600}.brand small{display:block;font-size:11px;opacity:.82}
+  .back{background:transparent;color:#fff;border:none;font-size:14px;padding:0;cursor:pointer}
+  .wrap{padding:14px}
+  .tiles{display:flex;gap:10px;margin-bottom:14px}
+  .tile{flex:1;background:var(--card);border:.5px solid var(--line);border-radius:12px;padding:12px 13px}
+  .tile .lbl{font-size:11px;color:var(--muted)}
+  .tile .big{font-size:22px;font-weight:500;line-height:1.15}
+  .tile .sub{font-size:11px;color:#a0a0a0}
+  .warn{display:inline-flex;align-items:center;gap:4px;background:var(--red-bg);color:var(--red-t);padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;margin-top:6px}
+  h3{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;margin:2px 2px 9px;color:var(--ink)}
+  .card{background:var(--card);border:.5px solid var(--line);border-radius:12px;padding:14px 15px;margin-bottom:16px}
+  .cardflat{background:var(--card);border:.5px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px}
+  .flex{display:flex;justify-content:space-between;align-items:center}
+  .pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500}
+  .op{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:.5px solid var(--line)}
+  .op:last-child{border-bottom:none}
+  .bar{height:8px;background:#eee;border-radius:20px;overflow:hidden}.fill{height:100%;border-radius:20px}
+  .small{font-size:11px;color:#a0a0a0}
+  .center{padding:48px 24px;text-align:center;color:var(--muted)}
+  .idbox{margin-top:14px;background:#fff;border:.5px solid var(--line);border-radius:10px;padding:12px;font-size:16px;font-weight:600;color:var(--ink)}
+  button.act{margin-top:14px;background:var(--red);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:600}
+  .srch{width:100%;padding:11px 14px;border:.5px solid var(--line);border-radius:10px;font-size:15px;margin-bottom:10px;background:#fff}
+  .cli{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;background:#fff;border:.5px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app"><div class="center">Загрузка…</div></div>
+
+<script>
+var API_URL = 'https://script.google.com/macros/s/AKfycbyvk8sPQguWOtXrLgkatUjYWuXfW1rtEBCxPS2fzx8VUQed1SfAo55_zzIw9TEqabsWEg/exec';
+var tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+
+function money(n){ return Math.round(Math.abs(n)).toLocaleString('ru-RU').replace(/,/g,' '); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initData(){ return tg ? tg.initData : ''; }
+function barColor(p){ return p>=80?'#1D9E75':(p>=30?'#EF9F27':'#E24B4A'); }
+function txtColor(p){ return p>=80?'#0f6e56':(p>=30?'#BA7517':'#a32d2d'); }
+
+var ALL_CLIENTS = [];
+
+function load(){
+  var id = initData();
+  if(!id){ return renderError({reason:'no_tg'}); }
+  fetch(API_URL + '?action=cabinet&initData=' + encodeURIComponent(id)).then(function(r){return r.json();}).then(route).catch(function(){renderError({reason:'net'});});
+}
+function loadClient(name){
+  document.getElementById('app').innerHTML='<div class="center">Загрузка…</div>';
+  fetch(API_URL + '?action=cabinet&initData=' + encodeURIComponent(initData()) + '&client=' + encodeURIComponent(name))
+    .then(function(r){return r.json();}).then(function(d){ d.ok?renderCabinet(d):renderError(d,true); }).catch(function(){renderError({reason:'net',admin:true},true);});
+}
+function route(d){ if(d.ok&&d.clients){ALL_CLIENTS=d.clients; return renderPicker('');} if(d.ok) return renderCabinet(d); return renderError(d); }
+
+function renderPicker(filter){
+  var f=(filter||'').toUpperCase();
+  var list=ALL_CLIENTS.filter(function(n){return !f||n.toUpperCase().indexOf(f)>=0;});
+  var rows=list.map(function(n){return '<div class="cli" onclick="loadClient(\''+n.replace(/'/g,"\\'")+'\')"><b style="font-weight:500">'+esc(n)+'</b><span style="color:#a0a0a0">›</span></div>';}).join('');
+  document.getElementById('app').innerHTML=
+    '<div class="head"><div class="brand"><div class="logo">🌹</div><div><b>SCARLETT</b><small>Все кабинеты · сотрудник</small></div></div><div style="font-size:12px">'+ALL_CLIENTS.length+' клиентов</div></div>'+
+    '<div class="wrap"><input class="srch" placeholder="Поиск клиента…" oninput="renderPicker(this.value)" value="'+esc(filter||'')+'">'+(rows||'<div class="center">Ничего не найдено</div>')+'</div>';
+  var inp=document.querySelector('.srch'); if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
+}
+
+function renderError(d,adminBack){
+  var app=document.getElementById('app');
+  if(d.reason==='unbound'){
+    var uid=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)?tg.initDataUnsafe.user.id:'';
+    app.innerHTML='<div class="head"><div class="brand"><div class="logo">🌹</div><div><b>SCARLETT</b><small>Личный кабинет</small></div></div></div>'+
+      '<div class="center">Кабинет ещё не привязан.<br>Отправьте менеджеру ваш ID:<div class="idbox">ID: '+esc(uid)+'</div>'+(uid?'<button class="act" onclick="copyId(\''+uid+'\')">Скопировать ID</button>':'')+'</div>';
+  } else if(d.reason==='no_tg'){ app.innerHTML='<div class="center">Откройте кабинет через кнопку в Telegram-боте SCARLETT.</div>'; }
+  else { app.innerHTML='<div class="center">Не удалось загрузить данные.<br>Попробуйте позже или напишите менеджеру.'+(adminBack?'<br><button class="act" onclick="renderPicker(\'\')">← К списку клиентов</button>':'')+'</div>'; }
+}
+
+function statusPill(s){
+  if(s==='оплачен') return '<span class="pill" style="background:var(--green-bg);color:var(--green)">оплачен</span>';
+  if(s==='ждёт') return '<span class="pill" style="background:var(--amber-bg);color:var(--amber)">ждёт оплаты</span>';
+  return '<span class="pill" style="background:var(--red-bg);color:var(--red-t)">просрочен</span>';
+}
+function moodTag(m){
+  if(m==='good') return '<div style="display:flex;align-items:center;gap:5px;background:#faeeda;padding:4px 10px;border-radius:20px"><i class="ti ti-flame" style="font-size:15px;color:#DA291C"></i><span style="font-size:12px;color:#854f0b;font-weight:500">отлично платите</span></div>';
+  if(m==='mid') return '<div style="display:flex;align-items:center;gap:5px;background:#faeeda;padding:4px 10px;border-radius:20px"><i class="ti ti-mood-neutral" style="font-size:15px;color:#BA7517"></i><span style="font-size:12px;color:#854f0b;font-weight:500">платите средне</span></div>';
+  return '<div style="display:flex;align-items:center;gap:5px;background:#fcebeb;padding:4px 10px;border-radius:20px"><i class="ti ti-mood-sad" style="font-size:15px;color:#a32d2d"></i><span style="font-size:12px;color:#a32d2d;font-weight:500">платите после вылета</span></div>';
+}
+function qbar(icon, label, right, pct){
+  var col=barColor(pct);
+  return '<div style="margin-bottom:13px"><div class="flex" style="font-size:12px;margin-bottom:5px"><span style="color:#1c1c1c;font-weight:500"><i class="ti '+icon+'" style="font-size:14px;color:'+txtColor(pct)+';vertical-align:-2px"></i> '+label+'</span><span style="color:#8a8a8a">'+right+'</span></div><div class="bar"><div class="fill" style="width:'+Math.max(4,pct)+'%;background:'+col+'"></div></div></div>';
+}
+
+function renderCabinet(d){
+  var debt=d.balanceUsd<0;
+  var preTotal=d.prepaidTotal||0, prePct=preTotal?Math.round(d.prepaidCount/preTotal*100):0;
+  var regPct=Math.min(100,Math.round((d.regularity||0)/(d.regTarget||8)*100));
+  var volPct=d.volTarget?Math.min(100,Math.round((d.seasonVolume||0)/d.volTarget*100)):0;
+
+  var h='';
+  h+='<div class="head"><div class="brand"><div class="logo">🌹</div><div>'+(d.admin?'<button class="back" onclick="renderPicker(\'\')">‹ Все клиенты</button>':'<b>SCARLETT</b>')+'<small>'+(d.admin?'режим сотрудника':'Личный кабинет')+'</small></div></div><span style="font-size:13px;font-weight:500">'+esc(d.name)+'</span></div>';
+  h+='<div class="wrap">';
+
+  h+='<div class="tiles"><div class="tile"><div class="lbl">Текущий баланс</div><div class="big" style="color:'+(debt?'#DA291C':'#0f6e56')+'">'+(debt?'−':'')+'$'+money(d.balanceUsd)+'</div><div class="sub">≈ '+(d.balanceRub<0?'−':'')+money(d.balanceRub)+' ₽</div>'+(debt?'<div class="warn"><i class="ti ti-alert-triangle" style="font-size:11px"></i>задолженность · оплатить сейчас</div>':'')+'</div>'+
+    '<div class="tile"><div class="lbl">Оборот за '+esc(d.season||'сезон')+'</div><div class="big" style="color:#0f6e56">$'+money(d.seasonVolume||0)+'</div><div class="sub">'+(d.flights?d.flights.length:0)+' вылетов</div></div></div>';
+
+  h+='<h3><i class="ti ti-truck" style="font-size:16px;color:#5f5e5a"></i> Груз в пути</h3>';
+  if(d.cargo && d.cargo.length){
+    d.cargo.forEach(function(c){ h+=cargoCard(c); });
+  } else {
+    h+='<div class="card small" style="text-align:center;color:#8a8a8a">Активных грузов в пути сейчас нет</div>';
+  }
+
+  h+='<h3><i class="ti ti-receipt" style="font-size:16px;color:#5f5e5a"></i> Вылеты и оплаты</h3>';
+  if(d.flights && d.flights.length){
+    h+='<div class="cardflat">';
+    d.flights.forEach(function(f){ h+='<div class="op"><div><div style="font-size:13px;font-weight:500">'+esc(f.country)+' · '+esc(f.date)+'</div><div class="small">вылет · $'+money(f.amount)+'</div></div>'+statusPill(f.status)+'</div>'; });
+    h+='</div>';
+  } else { h+='<div class="card small" style="text-align:center;color:#8a8a8a">Вылетов пока нет</div>'; }
+
+  h+='<h3><i class="ti ti-award" style="font-size:16px;color:#5f5e5a"></i> Статус</h3>';
+  h+='<div class="card">';
+  h+='<div class="flex" style="margin-bottom:14px"><div style="display:flex;align-items:center;gap:8px"><span class="pill" style="background:#e6f1fb;color:#185fa5;padding:4px 12px">'+esc(d.tier)+'</span>'+(d.nextTier?'<span style="font-size:12px;color:#8a8a8a">→ '+esc(d.nextTier)+'</span>':'')+'</div>'+moodTag(d.mood)+'</div>';
+  h+=qbar('ti-cash','Оплата до вылета', (d.prepaidCount||0)+' из '+(preTotal||0), prePct);
+  h+=qbar('ti-calendar-repeat','Регулярность заказов', (d.regularity||0)+' нед. подряд', regPct);
+  h+=qbar('ti-chart-bar','Объём за '+esc(d.season||'сезон'), '$'+money(d.seasonVolume||0)+' / $'+money(d.volTarget||0), volPct);
+  h+='<div style="display:flex;gap:8px;padding-top:13px;border-top:.5px solid var(--line)"><div style="flex:1;background:var(--green-bg);border-radius:9px;padding:9px 11px"><div style="font-size:11px;color:#0f6e56;font-weight:500">Ваша скидка сейчас</div><div style="font-size:17px;color:#0f6e56;font-weight:500;line-height:1.2">−'+d.discount+'% <span style="font-size:11px;font-weight:400">за предоплату</span></div></div>'+
+    (d.nextTier?'<div style="flex:1;background:#f3f3f3;border-radius:9px;padding:9px 11px"><div style="font-size:11px;color:#8a8a8a;font-weight:500"><i class="ti ti-lock" style="font-size:11px"></i> '+esc(d.nextTier)+' откроет</div><div style="font-size:17px;color:#8a8a8a;font-weight:500;line-height:1.2">−'+d.nextDiscount+'% <span style="font-size:11px;font-weight:400">за предоплату</span></div></div>':'')+'</div>';
+  h+='</div>';
+
+  h+='</div>';
+  document.getElementById('app').innerHTML=h;
+}
+
+function cargoCard(c){
+  return '<div class="card"><div class="flex" style="margin-bottom:11px"><div style="font-size:14px;font-weight:500">Груз '+esc(c.id||'')+(c.boxes?' · '+c.boxes+' коробок':'')+'</div><span class="pill" style="background:var(--green-bg);color:var(--green)">'+esc(c.status||'в пути')+'</span></div>'+
+    '<div style="margin-bottom:12px;font-size:12px">'+(c.origins||[]).map(function(o){return '<b style="font-weight:500">'+esc(o)+'</b>';}).join(' <span style="color:#a0a0a0">+</span> ')+' <i class="ti ti-arrow-right" style="font-size:13px;color:#a0a0a0;vertical-align:-2px"></i> <b style="font-weight:500">Москва</b></div>'+
+    (c.eta?'<div style="font-size:12px"><i class="ti ti-calendar" style="font-size:14px;color:#DA291C;vertical-align:-2px"></i> Прибытие: <b style="font-weight:500">'+esc(c.eta)+'</b></div>':'')+
+    '<div class="small" style="margin-top:7px"><i class="ti ti-bell" style="font-size:13px"></i> Уведомим при смене статуса</div></div>';
+}
+
+function copyId(id){ if(navigator.clipboard) navigator.clipboard.writeText(String(id)); if(tg&&tg.showAlert) tg.showAlert('ID скопирован: '+id); }
+load();
+</script>
+</body>
+</html>
