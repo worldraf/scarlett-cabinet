@@ -17,9 +17,9 @@
   .back{background:transparent;color:#fff;border:none;font-size:14px;padding:0;cursor:pointer}
   .wrap{padding:14px}
   .tiles{display:flex;gap:10px;margin-bottom:14px}
-  .tile{flex:1;background:var(--card);border:.5px solid var(--line);border-radius:12px;padding:12px 13px}
+  .tile{flex:1;background:var(--card);border:.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;justify-content:center;gap:4px}
   .tile .lbl{font-size:11px;color:var(--muted)}
-  .tile .big{font-size:22px;font-weight:500;line-height:1.15}
+  .tile .big{font-size:23px;font-weight:500;line-height:1.2;margin:1px 0}
   .tile .sub{font-size:11px;color:#a0a0a0}
   .warn{display:inline-flex;align-items:center;gap:4px;background:var(--red-bg);color:var(--red-t);padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;margin-top:6px}
   h3{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;margin:2px 2px 9px;color:var(--ink)}
@@ -143,10 +143,10 @@ function renderCabinet(d){
 }
 
 function cargoCard(c){
-  return '<div class="card"><div class="flex" style="margin-bottom:11px"><div style="font-size:14px;font-weight:500">Груз '+esc(c.id||'')+(c.boxes?' · '+c.boxes+' коробок':'')+'</div><span class="pill" style="background:var(--green-bg);color:var(--green)">'+esc(c.status||'в пути')+'</span></div>'+
+  return '<div class="card"><div style="font-size:14px;font-weight:500;margin-bottom:10px">Груз '+esc(c.id||'')+(c.boxes?' · '+c.boxes+' коробок':'')+'</div>'+
     '<div style="margin-bottom:12px;font-size:12px">'+(c.origins||[]).map(function(o){return '<b style="font-weight:500">'+esc(o)+'</b>';}).join(' <span style="color:#a0a0a0">+</span> ')+' <i class="ti ti-arrow-right" style="font-size:13px;color:#a0a0a0;vertical-align:-2px"></i> <b style="font-weight:500">Москва</b></div>'+
-    (c.eta?'<div style="font-size:12px"><i class="ti ti-calendar" style="font-size:14px;color:#DA291C;vertical-align:-2px"></i> Прибытие: <b style="font-weight:500">'+esc(c.eta)+'</b></div>':'')+
-    '<div class="small" style="margin-top:7px"><i class="ti ti-bell" style="font-size:13px"></i> Уведомим при смене статуса</div></div>';
+    '<div style="display:flex;align-items:center;gap:8px;padding:10px 11px;background:#f6f6f6;border-radius:9px"><i class="ti ti-truck" style="font-size:17px;color:#DA291C"></i><div><div style="font-size:13px;font-weight:500;color:#1c1c1c">'+esc(c.statusText||'')+'</div>'+(c.statusTime?'<div class="small">'+esc(c.statusTime)+'</div>':'')+'</div></div>'+
+    '<div class="small" style="margin-top:8px"><i class="ti ti-bell" style="font-size:13px"></i> Уведомим при следующей смене статуса машины</div></div>';
 }
 
 function copyId(id){ if(navigator.clipboard) navigator.clipboard.writeText(String(id)); if(tg&&tg.showAlert) tg.showAlert('ID скопирован: '+id); }
