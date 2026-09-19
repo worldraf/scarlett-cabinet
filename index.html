@@ -17,10 +17,11 @@
   .back{background:transparent;color:#fff;border:none;font-size:14px;padding:0;cursor:pointer}
   .wrap{padding:14px}
   .tiles{display:flex;gap:10px;margin-bottom:14px}
-  .tile{flex:1;background:var(--card);border:.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+  .tile{flex:1;background:var(--card);border:.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:5px}
   .tile .lbl{font-size:11px;color:var(--muted)}
-  .tile .big{font-size:23px;font-weight:500;line-height:1.2;margin:1px 0}
+  .tile .big{font-size:23px;font-weight:500;line-height:1.2}
   .tile .sub{font-size:11px;color:#a0a0a0}
+  .tile .tpill{margin-top:auto;align-self:flex-start;font-size:10px;font-weight:500;padding:4px 9px;border-radius:20px;line-height:1.3}
   .warn{display:inline-flex;align-items:center;gap:4px;background:var(--red-bg);color:var(--red-t);padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;margin-top:6px}
   h3{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;margin:2px 2px 9px;color:var(--ink)}
   .card{background:var(--card);border:.5px solid var(--line);border-radius:12px;padding:14px 15px;margin-bottom:16px}
@@ -111,8 +112,14 @@ function renderCabinet(d){
   h+='<div class="head"><div class="brand"><div class="logo">🌹</div><div>'+(d.admin?'<button class="back" onclick="renderPicker(\'\')">‹ Все клиенты</button>':'<b>SCARLETT</b>')+'<small>'+(d.admin?'режим сотрудника':'Личный кабинет')+'</small></div></div><span style="font-size:13px;font-weight:500">'+esc(d.name)+'</span></div>';
   h+='<div class="wrap">';
 
-  h+='<div class="tiles"><div class="tile"><div class="lbl">Текущий баланс</div><div class="big" style="color:'+(debt?'#DA291C':'#0f6e56')+'">'+(debt?'−':'')+'$'+money(d.balanceUsd)+'</div><div class="sub">≈ '+(d.balanceRub<0?'−':'')+money(d.balanceRub)+' ₽</div>'+(debt?'<div class="warn"><i class="ti ti-alert-triangle" style="font-size:11px"></i>задолженность · оплатить сейчас</div>':'')+'</div>'+
-    '<div class="tile"><div class="lbl">Оборот за '+esc(d.season||'сезон')+'</div><div class="big" style="color:#0f6e56">$'+money(d.seasonVolume||0)+'</div><div class="sub">'+(d.flights?d.flights.length:0)+' вылетов</div></div></div>';
+  var rate = d.balanceUsd ? Math.abs(d.balanceRub/d.balanceUsd) : 90;
+  var oborotRub = Math.round((d.seasonVolume||0)*rate);
+  h+='<div class="tiles">'+
+    '<div class="tile"><div class="lbl">Текущий баланс</div><div class="big" style="color:'+(debt?'#DA291C':'#0f6e56')+'">'+(debt?'−':'')+'$'+money(d.balanceUsd)+'</div><div class="sub">≈ '+(d.balanceRub<0?'−':'')+money(d.balanceRub)+' ₽</div>'+
+      (debt?'<div class="tpill" style="background:var(--red-bg);color:var(--red-t)"><i class="ti ti-alert-triangle" style="font-size:10px"></i> долг · оплатить сейчас</div>':'<div class="tpill" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-check" style="font-size:10px"></i> депозит</div>')+'</div>'+
+    '<div class="tile"><div class="lbl">Оборот за '+esc(d.season||'сезон')+'</div><div class="big" style="color:#0f6e56">$'+money(d.seasonVolume||0)+'</div><div class="sub">≈ '+money(oborotRub)+' ₽</div>'+
+      '<div class="tpill" style="background:#f1efe8;color:#5f5e5a"><i class="ti ti-plane-departure" style="font-size:10px"></i> '+(d.flights?d.flights.length:0)+' вылетов</div></div>'+
+    '</div>';
 
   h+='<h3><i class="ti ti-truck" style="font-size:16px;color:#5f5e5a"></i> Груз в пути</h3>';
   if(d.cargo && d.cargo.length){
