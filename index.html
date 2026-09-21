@@ -118,7 +118,7 @@ function renderCabinet(d){
     '<div class="tile"><div class="lbl">Текущий баланс</div><div class="big" style="color:'+(debt?'#DA291C':'#0f6e56')+'">'+(debt?'−':'')+'$'+money(d.balanceUsd)+'</div><div class="sub">≈ '+(d.balanceRub<0?'−':'')+money(d.balanceRub)+' ₽</div>'+
       (debt?'<div class="tpill" style="background:var(--red-bg);color:var(--red-t)"><i class="ti ti-alert-triangle" style="font-size:10px"></i> долг · оплатить сейчас</div>':'<div class="tpill" style="background:var(--green-bg);color:var(--green)"><i class="ti ti-check" style="font-size:10px"></i> депозит</div>')+'</div>'+
     '<div class="tile"><div class="lbl">Оборот за '+esc(d.season||'сезон')+'</div><div class="big" style="color:#0f6e56">$'+money(d.seasonVolume||0)+'</div><div class="sub">≈ '+money(oborotRub)+' ₽</div>'+
-      '<div class="tpill" style="background:#f1efe8;color:#5f5e5a"><i class="ti ti-plane-departure" style="font-size:10px"></i> '+(d.flights?d.flights.length:0)+' вылетов</div></div>'+
+      '<div class="tpill" style="background:#f1efe8;color:#5f5e5a"><i class="ti ti-plane-departure" style="font-size:10px"></i> '+(d.seasonCount||0)+' вылетов</div></div>'+
     '</div>';
 
   h+='<h3><i class="ti ti-truck" style="font-size:16px;color:#5f5e5a"></i> Груз в пути</h3>';
