@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SCARLETT — кабинет</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
   :root{--red:#DA291C;--ink:#1c1c1c;--muted:#8a8a8a;--line:#ececec;--bg:#f4f5f6;--card:#fff;
         --green:#0f6e56;--green-bg:#e1f5ee;--amber:#854f0b;--amber-bg:#faeeda;--red-bg:#fcebeb;--red-t:#a32d2d;}
@@ -148,7 +149,7 @@ function renderCabinet(d){
   var regPctReal = regTot ? Math.min(100, Math.round((d.regularity||0)/regTot*100)) : 0;
   var seasonLbl = esc(d.season||'сезон');
   h+='<h3><i class="ti ti-award" style="font-size:16px;color:#5f5e5a"></i> Статус</h3>';
-  h+='<div class="small" style="margin:2px 2px 10px">показатели за '+seasonLbl+' · '+seasonRange(d.season)+'</div>';
+  h+='<div class="small" style="margin:2px 2px 10px 14px">показатели за '+seasonLbl+' · '+seasonRange(d.season)+'</div>';
   h+='<div class="card">';
   h+='<div style="display:flex;justify-content:flex-end;margin-bottom:12px">'+moodTag(d.mood)+'</div>';
   h+='<div style="display:flex;gap:8px">';
