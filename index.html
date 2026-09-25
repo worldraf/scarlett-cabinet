@@ -59,15 +59,39 @@ function txtColor(p){ return p>=80?'#0f6e56':(p>=30?'#BA7517':'#a32d2d'); }
 
 var ALL_CLIENTS = [];
 
+/* Google Apps Script время от времени отвечает своей HTML-страницей ошибки
+   («не удалось открыть файл») или долго висит — это сбой на стороне Google, а не
+   наших данных. Поэтому каждый запрос повторяем до 3 раз, ждём не дольше 30 с. */
+var API_TRIES = 3, API_TIMEOUT_MS = 30000;
+function apiGet(url, attempt){
+  attempt = attempt || 1;
+  var ctrl = window.AbortController ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, API_TIMEOUT_MS) : null;
+  return fetch(url, ctrl ? { signal: ctrl.signal } : {})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (timer) clearTimeout(timer);
+      if (!d.ok && d.reason === 'config' && attempt < API_TRIES) throw new Error('config');
+      return d;
+    })
+    .catch(function(e){
+      if (timer) clearTimeout(timer);
+      if (attempt >= API_TRIES) throw e;
+      var c = document.querySelector('#app .center');
+      if (c) c.textContent = 'Загрузка… (попытка ' + (attempt + 1) + ' из ' + API_TRIES + ')';
+      return new Promise(function(res){ setTimeout(res, attempt * 1500); }).then(function(){ return apiGet(url, attempt + 1); });
+    });
+}
 function load(){
   var id = initData();
   if(!id){ return renderError({reason:'no_tg'}); }
-  fetch(API_URL + '?action=cabinet&initData=' + encodeURIComponent(id)).then(function(r){return r.json();}).then(route).catch(function(){renderError({reason:'net'});});
+  document.getElementById('app').innerHTML='<div class="center">Загрузка…</div>';
+  apiGet(API_URL + '?action=cabinet&initData=' + encodeURIComponent(id)).then(route).catch(function(){renderError({reason:'net'});});
 }
 function loadClient(name){
   document.getElementById('app').innerHTML='<div class="center">Загрузка…</div>';
-  fetch(API_URL + '?action=cabinet&initData=' + encodeURIComponent(initData()) + '&client=' + encodeURIComponent(name))
-    .then(function(r){return r.json();}).then(function(d){ d.ok?renderCabinet(d):renderError(d,true); }).catch(function(){renderError({reason:'net',admin:true},true);});
+  apiGet(API_URL + '?action=cabinet&initData=' + encodeURIComponent(initData()) + '&client=' + encodeURIComponent(name))
+    .then(function(d){ d.ok?renderCabinet(d):renderError(d,true,name); }).catch(function(){renderError({reason:'net',admin:true},true,name);});
 }
 function route(d){ if(d.ok&&d.clients){ALL_CLIENTS=d.clients; return renderPicker('');} if(d.ok) return renderCabinet(d); return renderError(d); }
 
@@ -81,14 +105,19 @@ function renderPicker(filter){
   var inp=document.querySelector('.srch'); if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}
 }
 
-function renderError(d,adminBack){
+function renderError(d,adminBack,retryClient){
   var app=document.getElementById('app');
   if(d.reason==='unbound'){
     var uid=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)?tg.initDataUnsafe.user.id:'';
     app.innerHTML='<div class="head"><div class="brand"><div class="logo">🌹</div><div><b>SCARLETT</b><small>Личный кабинет</small></div></div></div>'+
       '<div class="center">Кабинет еще не привязан.<br>Отправьте менеджеру ваш ID:<div class="idbox">ID: '+esc(uid)+'</div>'+(uid?'<button class="act" onclick="copyId(\''+uid+'\')">Скопировать ID</button>':'')+'</div>';
   } else if(d.reason==='no_tg'){ app.innerHTML='<div class="center">Откройте кабинет через кнопку в Telegram-боте SCARLETT.</div>'; }
-  else { app.innerHTML='<div class="center">Не удалось загрузить данные.<br>Попробуйте позже или напишите менеджеру.'+(adminBack?'<br><button class="act" onclick="renderPicker(\'\')">← К списку клиентов</button>':'')+'</div>'; }
+  else {
+    var retry = retryClient ? 'loadClient(\''+String(retryClient).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')' : 'load()';
+    app.innerHTML='<div class="center">Не удалось загрузить данные.<br>Попробуйте позже или напишите менеджеру.'+
+      '<br><button class="act" onclick="'+esc(retry)+'">↻ Повторить</button>'+
+      (adminBack?'<br><button class="act" onclick="renderPicker(\'\')">← К списку клиентов</button>':'')+'</div>';
+  }
 }
 
 function statusPill(s){
