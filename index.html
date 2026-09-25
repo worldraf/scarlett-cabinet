@@ -61,8 +61,9 @@ var ALL_CLIENTS = [];
 
 /* Google Apps Script время от времени отвечает своей HTML-страницей ошибки
    («не удалось открыть файл») или долго висит — это сбой на стороне Google, а не
-   наших данных. Поэтому каждый запрос повторяем до 3 раз, ждём не дольше 30 с. */
-var API_TRIES = 3, API_TIMEOUT_MS = 30000;
+   наших данных. Поэтому каждый запрос повторяем до 3 раз, ждём не дольше 90 с
+   (кабинет клиента иногда честно считается ~40 с — обрывать его нельзя). */
+var API_TRIES = 3, API_TIMEOUT_MS = 90000;
 function apiGet(url, attempt){
   attempt = attempt || 1;
   var ctrl = window.AbortController ? new AbortController() : null;
